@@ -1,0 +1,55 @@
+server:
+  port : 5050
+eureka:
+  client :
+    register-with-eureka : true
+    fetch-registry : true
+    service-url:
+      defaultZone : http://localhost:8761/eureka/
+  instance :
+    hostname : localhost
+
+spring :
+  application :
+    name : api
+  cloud:
+    gateway:
+      routes :
+        - id: payment
+          uri: lb://payment
+          predicates:
+            - Path=/payment/**
+          filters:
+            - name: CircuitBreaker
+              args:
+                name: payment
+                fallbackuri: forward:/paymentFail
+        - id : order
+          uri : lb://order
+          predicates :
+            - Path=/order/**
+          filters :
+           - name : CircuitBreaker
+             args :
+               name : order
+               fallbackuri : forward:/orderFail
+management:
+  endpoint:
+    web:
+      exposure:
+        include: hystrix.stream
+
+hystrix :
+  command :
+    fallbackcmd :
+      execution:
+        isolation:
+          thread:
+            timeoutInMilliseconds: 5000
+#  spring.cloud.gateway.routes[0].id=order
+#  spring.cloud.gateway.routes[0].uri=lb://order
+#  spring.cloud.gateway.routes[0].filter
+#  spring.cloud.gateway.routes[0].predicates[0]=Path=/order/**
+#  spring.cloud.gateway.routes[1].id=payment
+#  spring.cloud.gateway.routes[1].uri=lb://payment
+#  spring.cloud.gateway.routes[1].predicates[0]=Path=/payment/**
